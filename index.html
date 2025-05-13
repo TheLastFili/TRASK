@@ -349,7 +349,7 @@
             }
             
             document.getElementById(tabName).classList.add("active-content");
-            evt.target.classList.add("active");
+            evt.currentTarget.classList.add("active");
         }
         
         // Function to add a new player
@@ -795,4 +795,10 @@
                         <h3>${player.name}</h3>
                         <button class="edit-btn" data-player="${playerIndex}" data-game="${gameIndex}">Edit</button>
                     </div>
-                    <div class="player
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div>Characters Killed: ${game.charactersKilled}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div>Game Points: ${gamePoints}</div>
+                        </div>
