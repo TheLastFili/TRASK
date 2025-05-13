@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Board Game Tournament Tracker</title>
+    <title>Marvel Crisis Protocol Tournament Tracker</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,6 +63,15 @@
             padding: 8px;
             border-radius: 4px;
             min-width: 150px;
+        }
+        .objective-item {
+            background-color: #e3f2fd;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         button {
             background-color: #3498db;
@@ -143,17 +152,55 @@
             border-radius: 4px;
             margin-bottom: 16px;
         }
+        .objectives-box {
+            background-color: #ebf5fb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
         .hidden {
             display: none;
+        }
+        .toggle-details {
+            background-color: #34495e;
+            font-size: 12px;
+        }
+        .objective-details {
+            display: none;
+            padding: 10px;
+            margin-top: 8px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .task-completed {
+            background-color: #d4edda;
+        }
+        .number-input {
+            width: 60px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>Board Game Tournament Tracker</h1>
+    <h1>Marvel Crisis Protocol Tournament Tracker</h1>
     
     <div class="info-box">
         <p>Track player performances across 7 games with this tracker. Stats are saved locally on your device.</p>
         <p>Share this page URL with other participants to access the same tracker.</p>
+    </div>
+
+    <div class="objectives-box">
+        <h3>Tournament Objectives</h3>
+        <button class="toggle-details" onclick="toggleObjectiveDetails()">Show/Hide Details</button>
+        <div id="objective-details" class="objective-details">
+            <p><strong>Mutant Detected:</strong> KO an enemy Mutant - points equal to the enemy Mutant's Threat</p>
+            <p><strong>Take Them Out:</strong> KO ANY enemy leader - points equal to the enemy leader's Threat</p>
+            <p><strong>Bounty Hunter:</strong> Claim a bounty (secret until achieved) - 5 points</p>
+            <p><strong>Total Aggression:</strong> Win a game by tabling your opponent - 10 points</p>
+            <p><strong>Extinction Agenda:</strong> KO an Extinction Agenda target - points equal to the target's Threat</p>
+            <p><strong>Charles Was Right:</strong> End the game with an allied character still holding the enemy Extinction Agenda token - 3 points</p>
+            <p><strong>No More Mutants:</strong> KO 5 characters (count carries over across all games) - 5 points per 5 KOs</p>
+        </div>
     </div>
     
     <div class="tab-container">
@@ -226,16 +273,73 @@
     <script>
         let players = [];
         const GAMES = 7;
-        const STORAGE_KEY = 'boardGameTournamentData';
+        const STORAGE_KEY = 'marvelCrisisProtocolData';
         let editingPlayer = null;
         let editingGame = null;
         let tempStats = {};
+        
+        // Define objectives
+        const objectives = {
+            mutantDetected: { 
+                name: "Mutant Detected", 
+                description: "KO an enemy Mutant", 
+                pointsDescription: "Enemy Mutant's Threat",
+                variablePoints: true 
+            },
+            takeThemOut: { 
+                name: "Take Them Out", 
+                description: "KO ANY enemy leader", 
+                pointsDescription: "Enemy leader's Threat",
+                variablePoints: true 
+            },
+            bountyHunter: { 
+                name: "Bounty Hunter", 
+                description: "Claim a bounty (secret until achieved)", 
+                pointsDescription: "5 points",
+                points: 5 
+            },
+            totalAggression: { 
+                name: "Total Aggression", 
+                description: "Win a game by tabling your opponent", 
+                pointsDescription: "10 points",
+                points: 10 
+            },
+            extinctionAgenda: { 
+                name: "Extinction Agenda", 
+                description: "KO an Extinction Agenda target", 
+                pointsDescription: "Target's Threat",
+                variablePoints: true 
+            },
+            charlesWasRight: { 
+                name: "Charles Was Right", 
+                description: "End the game with an allied character still holding the enemy Extinction Agenda token", 
+                pointsDescription: "3 points",
+                points: 3 
+            },
+            noMoreMutants: { 
+                name: "No More Mutants", 
+                description: "KO 5 characters (carries over across all games)", 
+                pointsDescription: "5 points per 5 KOs",
+                points: 5,
+                cumulative: true 
+            }
+        };
         
         // Initial setup
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             renderAllPlayers();
         });
+
+        // Show/hide objective details
+        function toggleObjectiveDetails() {
+            const details = document.getElementById('objective-details');
+            if (details.style.display === 'block') {
+                details.style.display = 'none';
+            } else {
+                details.style.display = 'block';
+            }
+        }
         
         // Tab functionality
         function openTab(evt, tabName) {
@@ -272,8 +376,16 @@
                 name: name,
                 games: Array(GAMES).fill().map(() => ({
                     charactersKilled: 0,
-                    pointsEarned: 0
-                }))
+                    objectives: {
+                        mutantDetected: { completed: false, points: 0, threatValue: 0 },
+                        takeThemOut: { completed: false, points: 0, threatValue: 0 },
+                        bountyHunter: { completed: false, points: 0 },
+                        totalAggression: { completed: false, points: 0 },
+                        extinctionAgenda: { completed: false, points: 0, threatValue: 0 },
+                        charlesWasRight: { completed: false, points: 0 }
+                    }
+                })),
+                noMoreMutants: { count: 0, achievedCount: 0 } // Track the cumulative objective separately
             };
             
             players.push(player);
@@ -290,13 +402,80 @@
             }
         }
         
-        // Stat adjustment
-        function quickAdjust(playerIndex, gameIndex, stat, value) {
-            if (gameIndex < 0 || gameIndex >= GAMES) return;
+        // Calculate total points including all objectives
+        function calculateTotalPoints(player) {
+            let totalPoints = 0;
             
-            players[playerIndex].games[gameIndex][stat] += value;
-            if (players[playerIndex].games[gameIndex][stat] < 0) {
-                players[playerIndex].games[gameIndex][stat] = 0;
+            // Add up points from each game
+            for (let i = 0; i < GAMES; i++) {
+                // Add objective points from this game
+                Object.values(player.games[i].objectives).forEach(objective => {
+                    if (objective.completed) {
+                        totalPoints += objective.points;
+                    }
+                });
+            }
+            
+            // Add cumulative No More Mutants objective points
+            totalPoints += player.noMoreMutants.achievedCount * objectives.noMoreMutants.points;
+            
+            return totalPoints;
+        }
+        
+        // Calculate total characters killed
+        function calculateTotalKills(player) {
+            return player.games.reduce((sum, game) => sum + game.charactersKilled, 0);
+        }
+        
+        // Toggle objective completion
+        function toggleObjective(playerIndex, gameIndex, objectiveName) {
+            const player = players[playerIndex];
+            const objective = player.games[gameIndex].objectives[objectiveName];
+            
+            objective.completed = !objective.completed;
+            
+            // If objective is now completed and has fixed points, set them
+            if (objective.completed && objectives[objectiveName].points) {
+                objective.points = objectives[objectiveName].points;
+            } else if (!objective.completed) {
+                objective.points = 0;
+            }
+            
+            saveData();
+            renderAllPlayers();
+        }
+        
+        // Update objective threat value and points
+        function updateObjectiveThreat(playerIndex, gameIndex, objectiveName, threatValue) {
+            const player = players[playerIndex];
+            const objective = player.games[gameIndex].objectives[objectiveName];
+            
+            objective.threatValue = parseInt(threatValue) || 0;
+            if (objective.completed) {
+                objective.points = objective.threatValue;
+            }
+            
+            saveData();
+            renderAllPlayers();
+        }
+        
+        // Update characters killed and check for No More Mutants achievement
+        function updateCharactersKilled(playerIndex, gameIndex, value) {
+            const player = players[playerIndex];
+            const game = player.games[gameIndex];
+            
+            game.charactersKilled += value;
+            if (game.charactersKilled < 0) {
+                game.charactersKilled = 0;
+            }
+            
+            // Update the cumulative count for No More Mutants
+            player.noMoreMutants.count = calculateTotalKills(player);
+            
+            // Check if they've achieved new sets of 5 kills
+            const achievedSets = Math.floor(player.noMoreMutants.count / 5);
+            if (achievedSets > player.noMoreMutants.achievedCount) {
+                player.noMoreMutants.achievedCount = achievedSets;
             }
             
             saveData();
@@ -315,37 +494,62 @@
             if (gameIndex === -1) {
                 // Edit all games
                 for (let i = 0; i < GAMES; i++) {
+                    const game = playerData.games[i];
                     html += `<h4>Game ${i + 1}</h4>`;
                     
                     html += `<div class="adjust-container">
                         <label>Characters Killed:</label>
                         <button onclick="adjustTempStat(${i}, 'charactersKilled', -1)">-</button>
-                        <input type="number" class="adjust-value" id="temp-game${i}-charactersKilled" value="${playerData.games[i].charactersKilled}" min="0">
+                        <input type="number" class="adjust-value" id="temp-game${i}-charactersKilled" value="${game.charactersKilled}" min="0">
                         <button onclick="adjustTempStat(${i}, 'charactersKilled', 1)">+</button>
                     </div>`;
                     
-                    html += `<div class="adjust-container">
-                        <label>Points Earned:</label>
-                        <button onclick="adjustTempStat(${i}, 'pointsEarned', -1)">-</button>
-                        <input type="number" class="adjust-value" id="temp-game${i}-pointsEarned" value="${playerData.games[i].pointsEarned}" min="0">
-                        <button onclick="adjustTempStat(${i}, 'pointsEarned', 1)">+</button>
-                    </div>`;
+                    // Add objective editing
+                    for (const [key, obj] of Object.entries(objectives)) {
+                        if (key === 'noMoreMutants') continue; // Skip the cumulative objective
+                        
+                        const objectiveStatus = game.objectives[key];
+                        html += `<div class="adjust-container">
+                            <label>${obj.name}:</label>
+                            <input type="checkbox" id="temp-game${i}-${key}-completed" ${objectiveStatus.completed ? 'checked' : ''}>
+                        </div>`;
+                        
+                        if (obj.variablePoints) {
+                            html += `<div class="adjust-container">
+                                <label>Threat Value:</label>
+                                <input type="number" class="adjust-value" id="temp-game${i}-${key}-threat" value="${objectiveStatus.threatValue}" min="0">
+                            </div>`;
+                        }
+                    }
                 }
             } else {
                 // Edit specific game
+                const game = playerData.games[gameIndex];
+                
                 html += `<div class="adjust-container">
                     <label>Characters Killed:</label>
                     <button onclick="adjustTempStat(${gameIndex}, 'charactersKilled', -1)">-</button>
-                    <input type="number" class="adjust-value" id="temp-game${gameIndex}-charactersKilled" value="${playerData.games[gameIndex].charactersKilled}" min="0">
+                    <input type="number" class="adjust-value" id="temp-game${gameIndex}-charactersKilled" value="${game.charactersKilled}" min="0">
                     <button onclick="adjustTempStat(${gameIndex}, 'charactersKilled', 1)">+</button>
                 </div>`;
                 
-                html += `<div class="adjust-container">
-                    <label>Points Earned:</label>
-                    <button onclick="adjustTempStat(${gameIndex}, 'pointsEarned', -1)">-</button>
-                    <input type="number" class="adjust-value" id="temp-game${gameIndex}-pointsEarned" value="${playerData.games[gameIndex].pointsEarned}" min="0">
-                    <button onclick="adjustTempStat(${gameIndex}, 'pointsEarned', 1)">+</button>
-                </div>`;
+                // Add objective editing
+                for (const [key, obj] of Object.entries(objectives)) {
+                    if (key === 'noMoreMutants') continue; // Skip the cumulative objective
+                    
+                    const objectiveStatus = game.objectives[key];
+                    html += `<div class="adjust-container">
+                        <label>${obj.name}:</label>
+                        <input type="checkbox" id="temp-game${gameIndex}-${key}-completed" ${objectiveStatus.completed ? 'checked' : ''}>
+                    </div>`;
+                    
+                    if (obj.variablePoints) {
+                        html += `<div class="adjust-container">
+                            <label>Threat Value:</label>
+                            <input type="number" class="adjust-value" id="temp-game${gameIndex}-${key}-threat" value="${objectiveStatus.threatValue}" min="0">
+                        </div>`;
+                    }
+                }
             }
             
             modalContent.innerHTML = html;
@@ -355,12 +559,24 @@
             tempStats = {};
             if (gameIndex === -1) {
                 for (let i = 0; i < GAMES; i++) {
-                    tempStats[`game${i}-charactersKilled`] = playerData.games[i].charactersKilled;
-                    tempStats[`game${i}-pointsEarned`] = playerData.games[i].pointsEarned;
+                    initializeTempGameStats(playerData, i);
                 }
             } else {
-                tempStats[`game${gameIndex}-charactersKilled`] = playerData.games[gameIndex].charactersKilled;
-                tempStats[`game${gameIndex}-pointsEarned`] = playerData.games[gameIndex].pointsEarned;
+                initializeTempGameStats(playerData, gameIndex);
+            }
+        }
+        
+        function initializeTempGameStats(playerData, gameIndex) {
+            const game = playerData.games[gameIndex];
+            tempStats[`game${gameIndex}-charactersKilled`] = game.charactersKilled;
+            
+            for (const [key, obj] of Object.entries(objectives)) {
+                if (key === 'noMoreMutants') continue; // Skip the cumulative objective
+                
+                tempStats[`game${gameIndex}-${key}-completed`] = game.objectives[key].completed;
+                if (obj.variablePoints) {
+                    tempStats[`game${gameIndex}-${key}-threat`] = game.objectives[key].threatValue;
+                }
             }
         }
         
@@ -382,18 +598,57 @@
             if (editingGame === -1) {
                 // Save all games
                 for (let i = 0; i < GAMES; i++) {
-                    playerData.games[i].charactersKilled = parseInt(document.getElementById(`temp-game${i}-charactersKilled`).value) || 0;
-                    playerData.games[i].pointsEarned = parseInt(document.getElementById(`temp-game${i}-pointsEarned`).value) || 0;
+                    saveGameChanges(playerData, i);
                 }
             } else {
                 // Save specific game
-                playerData.games[editingGame].charactersKilled = parseInt(document.getElementById(`temp-game${editingGame}-charactersKilled`).value) || 0;
-                playerData.games[editingGame].pointsEarned = parseInt(document.getElementById(`temp-game${editingGame}-pointsEarned`).value) || 0;
+                saveGameChanges(playerData, editingGame);
             }
+            
+            // Recalculate No More Mutants achievement
+            updateNoMoreMutantsProgress(playerData);
             
             saveData();
             renderAllPlayers();
             closeModal();
+        }
+        
+        function saveGameChanges(playerData, gameIndex) {
+            const game = playerData.games[gameIndex];
+            
+            // Save characters killed
+            game.charactersKilled = parseInt(document.getElementById(`temp-game${gameIndex}-charactersKilled`).value) || 0;
+            
+            // Save objectives
+            for (const [key, obj] of Object.entries(objectives)) {
+                if (key === 'noMoreMutants') continue; // Skip the cumulative objective
+                
+                const objectiveElement = document.getElementById(`temp-game${gameIndex}-${key}-completed`);
+                if (objectiveElement) {
+                    game.objectives[key].completed = objectiveElement.checked;
+                    
+                    // Handle variable points
+                    if (obj.variablePoints) {
+                        const threatElement = document.getElementById(`temp-game${gameIndex}-${key}-threat`);
+                        if (threatElement) {
+                            game.objectives[key].threatValue = parseInt(threatElement.value) || 0;
+                            if (game.objectives[key].completed) {
+                                game.objectives[key].points = game.objectives[key].threatValue;
+                            } else {
+                                game.objectives[key].points = 0;
+                            }
+                        }
+                    } else {
+                        // Fixed points
+                        game.objectives[key].points = game.objectives[key].completed ? obj.points : 0;
+                    }
+                }
+            }
+        }
+        
+        function updateNoMoreMutantsProgress(playerData) {
+            playerData.noMoreMutants.count = calculateTotalKills(playerData);
+            playerData.noMoreMutants.achievedCount = Math.floor(playerData.noMoreMutants.count / 5);
         }
         
         function closeModal() {
@@ -412,6 +667,35 @@
             const data = localStorage.getItem(STORAGE_KEY);
             if (data) {
                 players = JSON.parse(data);
+                
+                // Compatibility check for older data format
+                players.forEach(player => {
+                    // Add noMoreMutants tracking if it doesn't exist
+                    if (!player.noMoreMutants) {
+                        player.noMoreMutants = { count: 0, achievedCount: 0 };
+                        updateNoMoreMutantsProgress(player);
+                    }
+                    
+                    // Ensure all objectives exist in each game
+                    player.games.forEach(game => {
+                        if (!game.objectives) {
+                            game.objectives = {};
+                        }
+                        
+                        // Ensure all objective types exist
+                        for (const [key, obj] of Object.entries(objectives)) {
+                            if (key === 'noMoreMutants') continue; // Skip the cumulative objective
+                            
+                            if (!game.objectives[key]) {
+                                if (obj.variablePoints) {
+                                    game.objectives[key] = { completed: false, points: 0, threatValue: 0 };
+                                } else {
+                                    game.objectives[key] = { completed: false, points: 0 };
+                                }
+                            }
+                        }
+                    });
+                });
             }
         }
         
@@ -428,8 +712,8 @@
             let html = '';
             
             players.forEach((player, playerIndex) => {
-                const totalKills = player.games.reduce((sum, game) => sum + game.charactersKilled, 0);
-                const totalPoints = player.games.reduce((sum, game) => sum + game.pointsEarned, 0);
+                const totalKills = calculateTotalKills(player);
+                const totalPoints = calculateTotalPoints(player);
                 
                 html += `<div class="player-container">
                     <div class="player-header">
@@ -442,11 +726,10 @@
                     <div class="player-stats">
                         <div class="stat-item">
                             <div>Characters Killed: <span class="running-total">${totalKills}</span></div>
-                            <button onclick="quickAdjust(${playerIndex}, ${GAMES-1}, 'charactersKilled', 1)">+1</button>
+                            <div>No More Mutants: ${player.noMoreMutants.achievedCount * objectives.noMoreMutants.points} pts (${player.noMoreMutants.count}/5 kills)</div>
                         </div>
                         <div class="stat-item">
                             <div>Total Points: <span class="running-total">${totalPoints}</span></div>
-                            <button onclick="quickAdjust(${playerIndex}, ${GAMES-1}, 'pointsEarned', 1)">+1</button>
                         </div>
                     </div>
                 </div>`;
@@ -464,7 +747,15 @@
             let html = '';
             
             players.forEach((player, playerIndex) => {
-                const gameData = player.games[gameIndex];
+                const game = player.games[gameIndex];
+                
+                // Calculate game points
+                let gamePoints = 0;
+                Object.values(game.objectives).forEach(objective => {
+                    if (objective.completed) {
+                        gamePoints += objective.points;
+                    }
+                });
                 
                 html += `<div class="player-container">
                     <div class="player-header">
@@ -473,15 +764,44 @@
                     </div>
                     <div class="player-stats">
                         <div class="stat-item">
-                            <div>Characters Killed: ${gameData.charactersKilled}</div>
-                            <button onclick="quickAdjust(${playerIndex}, ${gameIndex}, 'charactersKilled', 1)">+1</button>
+                            <div>Characters Killed: ${game.charactersKilled}</div>
+                            <button onclick="updateCharactersKilled(${playerIndex}, ${gameIndex}, 1)">+1</button>
+                            <button onclick="updateCharactersKilled(${playerIndex}, ${gameIndex}, -1)">-1</button>
                         </div>
                         <div class="stat-item">
-                            <div>Points Earned: ${gameData.pointsEarned}</div>
-                            <button onclick="quickAdjust(${playerIndex}, ${gameIndex}, 'pointsEarned', 1)">+1</button>
+                            <div>Game Points: ${gamePoints}</div>
                         </div>
                     </div>
-                </div>`;
+                    <h4>Objectives</h4>
+                    <div class="player-objectives">`;
+                
+                // Render each objective
+                for (const [key, obj] of Object.entries(objectives)) {
+                    if (key === 'noMoreMutants') continue; // Skip, this is shown in overview
+                    
+                    const objectiveStatus = game.objectives[key];
+                    const cssClass = objectiveStatus.completed ? "objective-item task-completed" : "objective-item";
+                    
+                    html += `<div class="${cssClass}">
+                        <span>${obj.name}</span>
+                        <div>`;
+                    
+                    if (obj.variablePoints) {
+                        html += `<input type="number" class="number-input" 
+                            value="${objectiveStatus.threatValue}" 
+                            onchange="updateObjectiveThreat(${playerIndex}, ${gameIndex}, '${key}', this.value)" min="0"> pts
+                        <input type="checkbox" ${objectiveStatus.completed ? 'checked' : ''} 
+                            onclick="toggleObjective(${playerIndex}, ${gameIndex}, '${key}')">`;
+                    } else {
+                        html += `${obj.points} pts
+                        <input type="checkbox" ${objectiveStatus.completed ? 'checked' : ''} 
+                            onclick="toggleObjective(${playerIndex}, ${gameIndex}, '${key}')">`;
+                    }
+                    
+                    html += `</div></div>`;
+                }
+                
+                html += `</div></div>`;
             });
             
             if (players.length === 0) {
@@ -498,6 +818,3 @@
                 closeModal();
             }
         }
-    </script>
-</body>
-</html>
