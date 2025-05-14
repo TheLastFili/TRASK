@@ -1,804 +1,474 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>TRASK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marvel Crisis Protocol Tournament Tracker</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 16px;
-            color: #333;
         }
-        h1, h2, h3 {
-            color: #2c3e50;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        .tab-container {
-            display: flex;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #ddd;
-            overflow-x: auto;
-        }
-        .tab {
-            padding: 10px 16px;
-            cursor: pointer;
-            background-color: #f1f1f1;
-            border: none;
-            outline: none;
-            transition: 0.3s;
-            font-weight: bold;
-        }
-        .tab.active {
-            background-color: #2c3e50;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-            padding: 16px 0;
-        }
-        .active-content {
-            display: block;
-        }
-        .player-container {
-            margin-bottom: 16px;
+
+        th, td {
             border: 1px solid #ddd;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        .player-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .player-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .stat-item {
-            background-color: #f9f9f9;
             padding: 8px;
-            border-radius: 4px;
-            min-width: 150px;
+            text-align: left;
         }
-        .objective-item {
-            background-color: #e3f2fd;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        th {
+            background-color: #f2f2f2;
         }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+
         button {
-            background-color: #3498db;
+            background-color: #4CAF50;
             color: white;
+            padding: 10px 15px;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
         }
+
         button:hover {
-            background-color: #2980b9;
+            background-color: #3e8e41;
         }
-        .add-player-container {
-            margin-top: 24px;
+
+        button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
         }
-        input, select {
-            padding: 8px;
-            margin-right: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+
+        .game-section {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
         }
+
         .running-total {
             font-weight: bold;
-            color: #e74c3c;
+            font-size: 1.2em;
+            margin-bottom: 10px;
         }
-        .edit-btn {
-            background-color: #f39c12;
-            margin-right: 8px;
-            font-size: 12px;
-            padding: 4px 8px;
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            font-size: 12px;
-            padding: 4px 8px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-        .modal-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .adjust-container {
-            display: flex;
-            align-items: center;
-            margin: 8px 0;
-        }
-        .adjust-container button {
-            margin: 0 8px;
-        }
-        .adjust-value {
-            width: 40px;
-            text-align: center;
-        }
-        .info-box {
-            background-color: #d5f5e3;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 16px;
-        }
-        .objectives-box {
-            background-color: #ebf5fb;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 16px;
-        }
-        .hidden {
-            display: none;
-        }
-        .toggle-details {
-            background-color: #34495e;
-            font-size: 12px;
-        }
-        .objective-details {
-            display: none;
-            padding: 10px;
-            margin-top: 8px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-        }
-        .task-completed {
-            background-color: #d4edda;
-        }
-        .number-input {
-            width: 60px;
-            text-align: center;
+
+        #noMoreMutantsControls {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Marvel Crisis Protocol Tournament Tracker</h1>
-    
-    <div class="info-box">
-        <p>Track player performances across 7 games with this tracker. Stats are saved locally on your device.</p>
-        <p>Share this page URL with other participants to access the same tracker.</p>
-    </div>
+    <div class="container">
+        <h1>T.R.A.S.K.</h1>
+	<h2>TRacker for Abnormal Species Kills</h1>
 
-    <div class="objectives-box">
-        <h3>Tournament Objectives</h3>
-        <button class="toggle-details" id="toggle-objective-btn">Show/Hide Details</button>
-        <div id="objective-details" class="objective-details">
-            <p><strong>Mutant Detected:</strong> KO an enemy Mutant - points equal to the enemy Mutant's Threat</p>
-            <p><strong>Take Them Out:</strong> KO ANY enemy leader - points equal to the enemy leader's Threat</p>
-            <p><strong>Bounty Hunter:</strong> Claim a bounty (secret until achieved) - 5 points</p>
-            <p><strong>Total Aggression:</strong> Win a game by tabling your opponent - 10 points</p>
-            <p><strong>Extinction Agenda:</strong> KO an Extinction Agenda target - points equal to the target's Threat</p>
-            <p><strong>Charles Was Right:</strong> End the game with an allied character still holding the enemy Extinction Agenda token - 3 points</p>
-            <p><strong>No More Mutants:</strong> KO 5 characters (count carries over across all games) - 5 points per 5 KOs</p>
+	<div class="logo">
+            <img src="trask.png" alt="TRASK Logo" style="max-width: 150px; height: auto; margin: 10px 0;">
         </div>
-    </div>
-    
-    <div class="tab-container" id="tab-container">
-        <button class="tab active" data-tab="overview">Overview</button>
-        <button class="tab" data-tab="game1">Game 1</button>
-        <button class="tab" data-tab="game2">Game 2</button>
-        <button class="tab" data-tab="game3">Game 3</button>
-        <button class="tab" data-tab="game4">Game 4</button>
-        <button class="tab" data-tab="game5">Game 5</button>
-        <button class="tab" data-tab="game6">Game 6</button>
-        <button class="tab" data-tab="game7">Game 7</button>
-    </div>
-    
-    <div id="overview" class="tab-content active-content">
-        <h2>Tournament Overview</h2>
-        <div id="overview-players"></div>
-        
-        <div class="add-player-container">
-            <h3>Add New Player</h3>
-            <input type="text" id="new-player-name" placeholder="Player Name">
-            <button id="add-player-btn">Add Player</button>
+        <label for="playerName">Player Name:</label>
+        <input type="text" id="playerName" placeholder="Enter your name">
+
+        <button onclick="clearPlayerData()">Clear My Data</button>
+
+
+	    <div id="noMoreMutantsControls">
+            <button onclick="incrementTotalKOs()">Add KO</button>
+            <button onclick="decrementTotalKOs()">Remove KO</button>
         </div>
-    </div>
-    
-    <div id="game1" class="tab-content">
-        <h2>Game 1</h2>
-        <div id="game1-players"></div>
-    </div>
-    
-    <div id="game2" class="tab-content">
-        <h2>Game 2</h2>
-        <div id="game2-players"></div>
-    </div>
-    
-    <div id="game3" class="tab-content">
-        <h2>Game 3</h2>
-        <div id="game3-players"></div>
-    </div>
-    
-    <div id="game4" class="tab-content">
-        <h2>Game 4</h2>
-        <div id="game4-players"></div>
-    </div>
-    
-    <div id="game5" class="tab-content">
-        <h2>Game 5</h2>
-        <div id="game5-players"></div>
-    </div>
-    
-    <div id="game6" class="tab-content">
-        <h2>Game 6</h2>
-        <div id="game6-players"></div>
-    </div>
-    
-    <div id="game7" class="tab-content">
-        <h2>Game 7</h2>
-        <div id="game7-players"></div>
-    </div>
-    
-    <!-- Edit modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="close-modal">&times;</span>
-            <h2>Adjust Stats</h2>
-            <div id="editModalContent"></div>
-            <button id="save-changes-btn">Save Changes</button>
+
+
+        <div class="running-total">
+            Total KOs: <span id="totalKOs">0</span> |
+            No More Mutants Points: <span id="noMoreMutantsPoints">0</span> |
+            Grand Total Points: <span id="grandTotalPoints">0</span>
         </div>
+
+        <div id="gameData">
+            </div>
+
     </div>
 
     <script>
-        // Global variables
-        let players = [];
-        const GAMES = 7;
-        const STORAGE_KEY = 'marvelCrisisProtocolData';
-        let editingPlayer = null;
-        let editingGame = null;
-        let tempStats = {};
-        
-        // Define objectives
-        const objectives = {
-            mutantDetected: { 
-                name: "Mutant Detected", 
-                description: "KO an enemy Mutant", 
-                pointsDescription: "Enemy Mutant's Threat",
-                variablePoints: true 
-            },
-            takeThemOut: { 
-                name: "Take Them Out", 
-                description: "KO ANY enemy leader", 
-                pointsDescription: "Enemy leader's Threat",
-                variablePoints: true 
-            },
-            bountyHunter: { 
-                name: "Bounty Hunter", 
-                description: "Claim a bounty (secret until achieved)", 
-                pointsDescription: "5 points",
-                points: 5 
-            },
-            totalAggression: { 
-                name: "Total Aggression", 
-                description: "Win a game by tabling your opponent", 
-                pointsDescription: "10 points",
-                points: 10 
-            },
-            extinctionAgenda: { 
-                name: "Extinction Agenda", 
-                description: "KO an Extinction Agenda target", 
-                pointsDescription: "Target's Threat",
-                variablePoints: true 
-            },
-            charlesWasRight: { 
-                name: "Charles Was Right", 
-                description: "End the game with an allied character still holding the enemy Extinction Agenda token", 
-                pointsDescription: "3 points",
-                points: 3 
-            },
-            noMoreMutants: { 
-                name: "No More Mutants", 
-                description: "KO 5 characters (carries over across all games)", 
-                pointsDescription: "5 points per 5 KOs",
-                points: 5,
-                cumulative: true 
-            }
-        };
-        
-        // Function to toggle objective details
-        function toggleObjectiveDetails() {
-            const details = document.getElementById('objective-details');
-            if (details.style.display === 'block') {
-                details.style.display = 'none';
-            } else {
-                details.style.display = 'block';
-            }
-        }
-        
-        // Function to handle tab switching
-        function openTab(evt, tabName) {
-            const tabContents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove("active-content");
-            }
-            
-            const tabs = document.getElementsByClassName("tab");
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove("active");
-            }
-            
-            document.getElementById(tabName).classList.add("active-content");
-            evt.currentTarget.classList.add("active");
-        }
-        
-        // Function to add a new player
-        function addPlayer() {
-            const nameInput = document.getElementById('new-player-name');
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                alert('Please enter a player name');
-                return;
-            }
-            
-            if (players.some(p => p.name === name)) {
-                alert('A player with this name already exists');
-                return;
-            }
-            
-            const player = {
-                name: name,
-                games: Array(GAMES).fill().map(() => ({
-                    charactersKilled: 0,
-                    objectives: {
-                        mutantDetected: { completed: false, points: 0, threatValue: 0 },
-                        takeThemOut: { completed: false, points: 0, threatValue: 0 },
-                        bountyHunter: { completed: false, points: 0 },
-                        totalAggression: { completed: false, points: 0 },
-                        extinctionAgenda: { completed: false, points: 0, threatValue: 0 },
-                        charlesWasRight: { completed: false, points: 0 }
-                    }
-                })),
-                noMoreMutants: { count: 0, achievedCount: 0 } // Track the cumulative objective separately
-            };
-            
-            players.push(player);
-            saveData();
-            renderAllPlayers();
-            nameInput.value = '';
-        }
-        
-        // Function to delete a player
-        function deletePlayer(playerIndex) {
-            if (confirm('Are you sure you want to delete this player?')) {
-                players.splice(playerIndex, 1);
-                saveData();
-                renderAllPlayers();
-            }
-        }
-        
-        // Calculate total points including all objectives
-        function calculateTotalPoints(player) {
-            let totalPoints = 0;
-            
-            // Add up points from each game
-            for (let i = 0; i < GAMES; i++) {
-                // Add objective points from this game
-                Object.values(player.games[i].objectives).forEach(objective => {
-                    if (objective.completed) {
-                        totalPoints += objective.points;
-                    }
-                });
-            }
-            
-            // Add cumulative No More Mutants objective points
-            totalPoints += player.noMoreMutants.achievedCount * objectives.noMoreMutants.points;
-            
-            return totalPoints;
-        }
-        
-        // Calculate total characters killed
-        function calculateTotalKills(player) {
-            return player.games.reduce((sum, game) => sum + game.charactersKilled, 0);
-        }
-        
-        // Toggle objective completion
-        function toggleObjective(playerIndex, gameIndex, objectiveName) {
-            const player = players[playerIndex];
-            const objective = player.games[gameIndex].objectives[objectiveName];
-            
-            objective.completed = !objective.completed;
-            
-            // If objective is now completed and has fixed points, set them
-            if (objective.completed && objectives[objectiveName].points) {
-                objective.points = objectives[objectiveName].points;
-            } else if (!objective.completed) {
-                objective.points = 0;
-            }
-            
-            saveData();
-            renderAllPlayers();
-        }
-        
-        // Update objective threat value and points
-        function updateObjectiveThreat(playerIndex, gameIndex, objectiveName, threatValue) {
-            const player = players[playerIndex];
-            const objective = player.games[gameIndex].objectives[objectiveName];
-            
-            objective.threatValue = parseInt(threatValue) || 0;
-            if (objective.completed) {
-                objective.points = objective.threatValue;
-            }
-            
-            saveData();
-            renderAllPlayers();
-        }
-        
-        // Update characters killed and check for No More Mutants achievement
-        function updateCharactersKilled(playerIndex, gameIndex, value) {
-            const player = players[playerIndex];
-            const game = player.games[gameIndex];
-            
-            game.charactersKilled += value;
-            if (game.charactersKilled < 0) {
-                game.charactersKilled = 0;
-            }
-            
-            // Update the cumulative count for No More Mutants
-            player.noMoreMutants.count = calculateTotalKills(player);
-            
-            // Check if they've achieved new sets of 5 kills
-            const achievedSets = Math.floor(player.noMoreMutants.count / 5);
-            if (achievedSets > player.noMoreMutants.achievedCount) {
-                player.noMoreMutants.achievedCount = achievedSets;
-            }
-            
-            saveData();
-            renderAllPlayers();
-        }
-        
-        function openEditModal(playerIndex, gameIndex) {
-            editingPlayer = playerIndex;
-            editingGame = gameIndex;
-            
-            const playerData = players[playerIndex];
-            const modalContent = document.getElementById('editModalContent');
-            
-            let html = `<h3>${playerData.name} - ${gameIndex === -1 ? 'All Games' : 'Game ' + (gameIndex + 1)}</h3>`;
-            
-            if (gameIndex === -1) {
-                // Edit all games
-                for (let i = 0; i < GAMES; i++) {
-                    const game = playerData.games[i];
-                    html += `<h4>Game ${i + 1}</h4>`;
-                    
-                    html += `<div class="adjust-container">
-                        <label>Characters Killed:</label>
-                        <button class="adjust-temp-stat" data-game="${i}" data-stat="charactersKilled" data-value="-1">-</button>
-                        <input type="number" class="adjust-value" id="temp-game${i}-charactersKilled" value="${game.charactersKilled}" min="0">
-                        <button class="adjust-temp-stat" data-game="${i}" data-stat="charactersKilled" data-value="1">+</button>
-                    </div>`;
-                    
-                    // Add objective editing
-                    for (const [key, obj] of Object.entries(objectives)) {
-                        if (key === 'noMoreMutants') continue; // Skip the cumulative objective
-                        
-                        const objectiveStatus = game.objectives[key];
-                        html += `<div class="adjust-container">
-                            <label>${obj.name}:</label>
-                            <input type="checkbox" id="temp-game${i}-${key}-completed" ${objectiveStatus.completed ? 'checked' : ''}>
-                        </div>`;
-                        
-                        if (obj.variablePoints) {
-                            html += `<div class="adjust-container">
-                                <label>Threat Value:</label>
-                                <input type="number" class="adjust-value" id="temp-game${i}-${key}-threat" value="${objectiveStatus.threatValue}" min="0">
-                            </div>`;
-                        }
-                    }
-                }
-            } else {
-                // Edit specific game
-                const game = playerData.games[gameIndex];
-                
-                html += `<div class="adjust-container">
-                    <label>Characters Killed:</label>
-                    <button class="adjust-temp-stat" data-game="${gameIndex}" data-stat="charactersKilled" data-value="-1">-</button>
-                    <input type="number" class="adjust-value" id="temp-game${gameIndex}-charactersKilled" value="${game.charactersKilled}" min="0">
-                    <button class="adjust-temp-stat" data-game="${gameIndex}" data-stat="charactersKilled" data-value="1">+</button>
-                </div>`;
-                
-                // Add objective editing
-                for (const [key, obj] of Object.entries(objectives)) {
-                    if (key === 'noMoreMutants') continue; // Skip the cumulative objective
-                    
-                    const objectiveStatus = game.objectives[key];
-                    html += `<div class="adjust-container">
-                        <label>${obj.name}:</label>
-                        <input type="checkbox" id="temp-game${gameIndex}-${key}-completed" ${objectiveStatus.completed ? 'checked' : ''}>
-                    </div>`;
-                    
-                    if (obj.variablePoints) {
-                        html += `<div class="adjust-container">
-                            <label>Threat Value:</label>
-                            <input type="number" class="adjust-value" id="temp-game${gameIndex}-${key}-threat" value="${objectiveStatus.threatValue}" min="0">
-                        </div>`;
-                    }
-                }
-            }
-            
-            modalContent.innerHTML = html;
-            document.getElementById('editModal').style.display = 'block';
-            
-            // Initialize temp stats
-            tempStats = {};
-            if (gameIndex === -1) {
-                for (let i = 0; i < GAMES; i++) {
-                    initializeTempGameStats(playerData, i);
-                }
-            } else {
-                initializeTempGameStats(playerData, gameIndex);
+        const objectives = [
+            { name: "Mutant Detected", type: "threat", points: "X", description: "KO an enemy Mutant", multiple: true },
+            { name: "Take Them Out", type: "threat", points: "X", description: "KO ANY (not just Mutant) enemy leader" },
+            { name: "Bounty Hunter", type: "static", points: 5, description: "Claim a bounty (will remain secret until you have achieved it)" },
+            { name: "Total Aggression", type: "static", points: 10, description: "Win a game by tabling your opponent" },
+            { name: "Extinction Agenda", type: "threat", points: "X", description: "KO an Extinction Agenda target" },
+            { name: "Charles Was Right", type: "static", points: 3, description: "End the game with an allied character still holding the enemy Extinction Agenda token" }
+        ];
+
+        const numGames = 7;
+        let playerData = {};
+        let playerNameInput = document.getElementById("playerName");
+        let totalKOsDisplay = document.getElementById("totalKOs");
+        let noMoreMutantsPointsDisplay = document.getElementById("noMoreMutantsPoints");
+        let grandTotalPointsDisplay = document.getElementById("grandTotalPoints");
+
+        // Load player data from local storage
+        function loadPlayerData() {
+            const name = localStorage.getItem("playerName");
+            if (name) {
+                playerNameInput.value = name;
+                playerData = JSON.parse(localStorage.getItem(name)) || {};
             }
 
-            // Add event listeners to buttons inside the modal
-            document.querySelectorAll('.adjust-temp-stat').forEach(button => {
-                button.addEventListener('click', function() {
-                    const gameIndex = parseInt(this.getAttribute('data-game'));
-                    const stat = this.getAttribute('data-stat');
-                    const value = parseInt(this.getAttribute('data-value'));
-                    adjustTempStat(gameIndex, stat, value);
-                });
-            });
-        }
-        
-        function initializeTempGameStats(playerData, gameIndex) {
-            const game = playerData.games[gameIndex];
-            tempStats[`game${gameIndex}-charactersKilled`] = game.charactersKilled;
-            
-            for (const [key, obj] of Object.entries(objectives)) {
-                if (key === 'noMoreMutants') continue; // Skip the cumulative objective
-                
-                tempStats[`game${gameIndex}-${key}-completed`] = game.objectives[key].completed;
-                if (obj.variablePoints) {
-                    tempStats[`game${gameIndex}-${key}-threat`] = game.objectives[key].threatValue;
-                }
-            }
-        }
-        
-        function adjustTempStat(gameIndex, stat, value) {
-            const inputId = `temp-game${gameIndex}-${stat}`;
-            const input = document.getElementById(inputId);
-            let currentValue = parseInt(input.value) || 0;
-            currentValue += value;
-            if (currentValue < 0) currentValue = 0;
-            input.value = currentValue;
-            tempStats[`game${gameIndex}-${stat}`] = currentValue;
-        }
-        
-        function saveChanges() {
-            if (editingPlayer === null || editingGame === null) return;
-            
-            const playerData = players[editingPlayer];
-            
-            if (editingGame === -1) {
-                // Save all games
-                for (let i = 0; i < GAMES; i++) {
-                    saveGameChanges(playerData, i);
-                }
-            } else {
-                // Save specific game
-                saveGameChanges(playerData, editingGame);
-            }
-            
-            // Recalculate No More Mutants achievement
-            updateNoMoreMutantsProgress(playerData);
-            
-            saveData();
-            renderAllPlayers();
-            closeModal();
-        }
-        
-        function saveGameChanges(playerData, gameIndex) {
-            const game = playerData.games[gameIndex];
-            
-            // Save characters killed
-            game.charactersKilled = parseInt(document.getElementById(`temp-game${gameIndex}-charactersKilled`).value) || 0;
-            
-            // Save objectives
-            for (const [key, obj] of Object.entries(objectives)) {
-                if (key === 'noMoreMutants') continue; // Skip the cumulative objective
-                
-                const objectiveElement = document.getElementById(`temp-game${gameIndex}-${key}-completed`);
-                if (objectiveElement) {
-                    game.objectives[key].completed = objectiveElement.checked;
-                    
-                    // Handle variable points
-                    if (obj.variablePoints) {
-                        const threatElement = document.getElementById(`temp-game${gameIndex}-${key}-threat`);
-                        if (threatElement) {
-                            game.objectives[key].threatValue = parseInt(threatElement.value) || 0;
-                            if (game.objectives[key].completed) {
-                                game.objectives[key].points = game.objectives[key].threatValue;
-                            } else {
-                                game.objectives[key].points = 0;
-                            }
-                        }
-                    } else {
-                        // Fixed points
-                        game.objectives[key].points = game.objectives[key].completed ? obj.points : 0;
-                    }
-                }
-            }
-        }
-        
-        function updateNoMoreMutantsProgress(playerData) {
-            playerData.noMoreMutants.count = calculateTotalKills(playerData);
-            playerData.noMoreMutants.achievedCount = Math.floor(playerData.noMoreMutants.count / 5);
-        }
-        
-        function closeModal() {
-            document.getElementById('editModal').style.display = 'none';
-            editingPlayer = null;
-            editingGame = null;
-            tempStats = {};
-        }
-        
-        // Storage functions
-        function saveData() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(players));
-            } catch (e) {
-                console.error("Failed to save data to localStorage:", e);
-                alert("Failed to save data. Storage might be full or disabled.");
-            }
-        }
-        
-        function loadData() {
-            try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                if (data) {
-                    players = JSON.parse(data);
-                    
-                    // Compatibility check for older data format
-                    players.forEach(player => {
-                        // Add noMoreMutants tracking if it doesn't exist
-                        if (!player.noMoreMutants) {
-                            player.noMoreMutants = { count: 0, achievedCount: 0 };
-                            updateNoMoreMutantsProgress(player);
-                        }
-                        
-                        // Ensure all objectives exist in each game
-                        player.games.forEach(game => {
-                            if (!game.objectives) {
-                                game.objectives = {};
-                            }
-                            
-                            // Ensure all objective types exist
-                            for (const [key, obj] of Object.entries(objectives)) {
-                                if (key === 'noMoreMutants') continue; // Skip the cumulative objective
-                                
-                                if (!game.objectives[key]) {
-                                    if (obj.variablePoints) {
-                                        game.objectives[key] = { completed: false, points: 0, threatValue: 0 };
-                                    } else {
-                                        game.objectives[key] = { completed: false, points: 0 };
-                                    }
-                                }
-                            }
-                        });
+            // Initialize game data if not present
+            for (let i = 1; i <= numGames; i++) {
+                if (!playerData[`game${i}`]) {
+                    playerData[`game${i}`] = {};
+                    objectives.forEach(objective => {
+                        playerData[`game${i}`][objective.name] = {
+                            count: 0,
+                            threatValues: [], // Store individual threat values for each instance
+                            baseThreatValue: 0 //Store the base threat value.
+                        };
                     });
                 }
-            } catch (e) {
-                console.error("Failed to load data from localStorage:", e);
-                alert("Failed to load saved data. Using default values.");
-                players = [];
+            }
+
+            if (playerData.totalKOs === undefined) {
+                playerData.totalKOs = 0;
+            }
+            updateTotalKOsDisplay();
+
+            if (playerData.noMoreMutantsPoints === undefined) {
+                playerData.noMoreMutantsPoints = 0;
+            }
+
+            updateNoMoreMutantsPointsDisplay();
+
+            updateGrandTotalPointsDisplay();
+        }
+
+        // Save player data to local storage
+        function savePlayerData() {
+            const name = playerNameInput.value;
+            localStorage.setItem("playerName", name);
+            localStorage.setItem(name, JSON.stringify(playerData));
+        }
+
+        // Update display of total KOs and No More Mutants points
+        function updateTotalKOsDisplay() {
+            totalKOsDisplay.textContent = playerData.totalKOs;
+        }
+
+        function updateNoMoreMutantsPointsDisplay() {
+            let points = Math.floor(playerData.totalKOs / 5) * 5;
+            playerData.noMoreMutantsPoints = points;
+            noMoreMutantsPointsDisplay.textContent = playerData.noMoreMutantsPoints;
+        }
+
+        function updateGrandTotalPointsDisplay() {
+            let grandTotal = playerData.noMoreMutantsPoints;
+            for (let i = 1; i <= numGames; i++) {
+                grandTotal += calculateGameTotal(i);
+            }
+            grandTotalPointsDisplay.textContent = grandTotal;
+        }
+
+
+	// Increment/Decrement Total KOs
+        function incrementTotalKOs() {
+            playerData.totalKOs++;
+            updateTotalKOsDisplay();
+            updateNoMoreMutantsPointsDisplay();
+            updateGrandTotalPointsDisplay();
+            savePlayerData();
+        }
+
+        function decrementTotalKOs() {
+            if (playerData.totalKOs > 0) {
+                playerData.totalKOs--;
+                updateTotalKOsDisplay();
+                updateNoMoreMutantsPointsDisplay();
+                updateGrandTotalPointsDisplay();
+                savePlayerData();
             }
         }
-        
-        // Rendering functions
-        function renderAllPlayers() {
-            renderOverview();
-            for (let i = 0; i < GAMES; i++) {
-                renderGamePlayers(i);
+
+        function clearPlayerData() {
+            const playerName = playerNameInput.value;
+            if (playerName) {
+                localStorage.removeItem("playerName");
+                localStorage.removeItem(playerName);
             }
-        }
-        
-        function renderOverview() {
-            const container = document.getElementById('overview-players');
-            let html = '';
-            
-            players.forEach((player, playerIndex) => {
-                const totalKills = calculateTotalKills(player);
-                const totalPoints = calculateTotalPoints(player);
-                
-                html += `<div class="player-container">
-                    <div class="player-header">
-                        <h3>${player.name}</h3>
-                        <div>
-                            <button class="edit-btn" data-player="${playerIndex}" data-game="-1">Edit All Games</button>
-                            <button class="delete-btn" data-player="${playerIndex}">Delete</button>
-                        </div>
-                    </div>
-                    <div class="player-stats">
-                        <div class="stat-item">
-                            <div>Characters Killed: <span class="running-total">${totalKills}</span></div>
-                            <div>No More Mutants: ${player.noMoreMutants.achievedCount * objectives.noMoreMutants.points} pts (${player.noMoreMutants.count}/5 kills)</div>
-                        </div>
-                        <div class="stat-item">
-                            <div>Total Points: <span class="running-total">${totalPoints}</span></div>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            
-            if (players.length === 0) {
-                html = '<p>No players added yet. Add players using the form below.</p>';
-            }
-            
-            container.innerHTML = html;
-            
-            // Add event listeners to the edit and delete buttons
-            document.querySelectorAll('.edit-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const playerIndex = parseInt(this.getAttribute('data-player'));
-                    const gameIndex = parseInt(this.getAttribute('data-game'));
-                    openEditModal(playerIndex, gameIndex);
+            playerData = {};
+            for (let i = 1; i <= numGames; i++) {
+                playerData[`game${i}`] = {};
+                objectives.forEach(objective => {
+                    playerData[`game${i}`][objective.name] = {
+                        count: 0,
+                        threatValues: [],
+                        baseThreatValue: 0
+                    };
                 });
-            });
-            
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const playerIndex = parseInt(this.getAttribute('data-player'));
-                    deletePlayer(playerIndex);
-                });
-            });
-        }
-        
-        function renderGamePlayers(gameIndex) {
-            const container = document.getElementById(`game${gameIndex+1}-players`);
-            let html = '';
-            
-            players.forEach((player, playerIndex) => {
-                const game = player.games[gameIndex];
-                
-                // Calculate game points
-                let gamePoints = 0;
-                Object.values(game.objectives).forEach(objective => {
-                    if (objective.completed) {
-                        gamePoints += objective.points;
+            }
+            playerData.totalKOs = 0;
+            playerData.noMoreMutantsPoints = 0;
+            updateTotalKOsDisplay();
+            updateNoMoreMutantsPointsDisplay();
+            updateGrandTotalPointsDisplay();
+
+            for (let i = 1; i <= numGames; i++) {
+                objectives.forEach(objective => {
+                    let selectElement = document.getElementById(`${objective.name}-threat-${i}`);
+                    if (selectElement) {
+                        selectElement.value = 0;
                     }
+                    updatePoints(objective.name, i);
                 });
-                
-                html += `<div class="player-container">
-                    <div class="player-header">
-                        <h3>${player.name}</h3>
-                        <button class="edit-btn" data-player="${playerIndex}" data-game="${gameIndex}">Edit</button>
-                    </div>
-                    <div class="player-stats">
-                        <div class="stat-item">
-                            <div>Characters Killed: ${game.charactersKilled}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div>Game Points: ${gamePoints}</div>
-                        </div>
+                updateGameTotal(i);
+            }
+            savePlayerData();
+            renderGameSections();
+
+        }
+
+        // Render game sections
+        function renderGameSections() {
+            let gameDataDiv = document.getElementById("gameData");
+            gameDataDiv.innerHTML = "";
+
+            for (let i = 1; i <= numGames; i++) {
+                let gameSection = document.createElement("div");
+                gameSection.classList.add("game-section");
+                gameSection.innerHTML = `<h2>Game ${i}</h2>`;
+
+                let table = document.createElement("table");
+                let thead = document.createElement("thead");
+                thead.innerHTML = `
+                    <tr>
+                        <th>Objective</th>
+                        <th>Description</th>
+                        <th>Threat Value</th>
+                        <th>Points</th>
+                        <th>Actions</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                let tbody = document.createElement("tbody");
+
+                objectives.forEach(objective => {
+                    let row = document.createElement("tr");
+                    let buttonId = `${objective.name}-add-button-${i}`;
+                    let multipleButton = `<button onclick="incrementObjective('${objective.name}', ${i})">+ Mutant KO</button>`;
+                    let singleButton = `<button id="${buttonId}" onclick="incrementObjective('${objective.name}', ${i})">+ Single</button>`;
+                    
+                    row.innerHTML = `
+                        <td>${objective.name}</td>
+                        <td>${objective.description}</td>
+                        <td>
+                            ${objective.type === "threat" ? `<select id="${objective.name}-threat-${i}">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                </select>` : "N/A"}
+                        </td>
+                        <td id="${objective.name}-points-${i}">0</td>
+                        <td>
+                           ${objective.name === "Mutant Detected" ? multipleButton : singleButton}
+                            <button onclick="removeObjective('${objective.name}', ${i})">- Remove</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                table.appendChild(tbody);
+                gameSection.appendChild(table);
+
+                // Add game total display
+                gameSection.innerHTML += `<div class="game-total">Game ${i} Total: <span id="game${i}-total">0</span></div>`;
+
+                gameDataDiv.appendChild(gameSection);
+            }
+            // After rendering, set the loaded values
+            for (let i = 1; i <= numGames; i++) {
+                objectives.forEach(objective => {
+                    if (objective.type === "threat") {
+                        let selectElement = document.getElementById(`${objective.name}-threat-${i}`);
+                        selectElement.value = playerData[`game${i}`][objective.name].baseThreatValue;
+                        selectElement.addEventListener("change", function() {
+                            playerData[`game${i}`][objective.name].baseThreatValue = parseInt(this.value);
+                            updatePoints(objective.name, i);
+                            updateGameTotal(i);
+                            updateGrandTotalPointsDisplay();
+                            savePlayerData();
+                        });
+                    }
+                    updatePoints(objective.name, i); // Initial points update
+                    updateButtonState(objective.name, i); // Initial button state update
+                });
+                updateGameTotal(i); // Initial game total update
+            }
+        }
+
+        // Update button state based on whether objective is already scored
+        function updateButtonState(objectiveName, gameNumber) {
+            if (objectiveName === "Mutant Detected") {
+                return; // Skip Mutant Detected as it can be scored multiple times
+            }
+            
+            let buttonId = `${objectiveName}-add-button-${gameNumber}`;
+            let button = document.getElementById(buttonId);
+            if (button) {
+                let isScored = false;
+                if (playerData[`game${gameNumber}`][objectiveName]) {
+                    if (playerData[`game${gameNumber}`][objectiveName].count > 0) {
+                        isScored = true;
+                    }
+                }
+                button.disabled = isScored;
+            }
+        }
+
+        // Increment objective count and update points
+        function incrementObjective(objectiveName, gameNumber) {
+
+            if (!playerData[`game${gameNumber}`]) {
+                playerData[`game${gameNumber}`] = {};
+            }
+
+            if (!playerData[`game${gameNumber}`][objectiveName]) {
+                playerData[`game${gameNumber}`][objectiveName] = {
+                    count: 0,
+                    threatValues: [],
+                    baseThreatValue: 0
+                };
+            }
+
+            // For non-Mutant Detected objectives, only allow scoring once
+            if (objectiveName !== "Mutant Detected" && playerData[`game${gameNumber}`][objectiveName].count > 0) {
+                return; // Already scored, do nothing
+            }
+
+            let threatValue;
+            if (objectiveName === "Mutant Detected") {
+                threatValue = parseInt(document.getElementById(`${objectiveName}-threat-${gameNumber}`).value);
+                playerData[`game${gameNumber}`][objectiveName].threatValues.push(threatValue); // Add specific threat value
+                playerData.totalKOs += 1;
+            } else {
+                playerData[`game${gameNumber}`][objectiveName].count++; // Other objectives just increment the count
+                if (objectiveName === "Take Them Out" || objectiveName === "Extinction Agenda") {
+                    playerData.totalKOs += 1;
+                }
+            }
+
+            updateTotalKOsDisplay();
+            updateNoMoreMutantsPointsDisplay();
+            updatePoints(objectiveName, gameNumber);
+            updateButtonState(objectiveName, gameNumber);
+            updateGameTotal(gameNumber);
+            updateGrandTotalPointsDisplay();
+            savePlayerData();
+        }
+
+        // Remove objective points
+        function removeObjective(objectiveName, gameNumber) {
+           if (!playerData[`game${gameNumber}`]) {
+                playerData[`game${gameNumber}`] = {};
+            }
+
+            if (!playerData[`game${gameNumber}`][objectiveName]) {
+                playerData[`game${gameNumber}`][objectiveName] = {
+                    count: 0,
+                    threatValues: [],
+                    baseThreatValue: 0
+                };
+            }
+
+            if (objectiveName === "Mutant Detected") {
+                if (playerData[`game${gameNumber}`][objectiveName].threatValues.length > 0) {
+                    let threatValueToRemove = playerData[`game${gameNumber}`][objectiveName].threatValues.pop(); // Remove the *last* added value.
+                    playerData.totalKOs -= 1; // Decrement total KOs
+                }
+            }
+            else if (objectiveName === "Take Them Out" || objectiveName === "Extinction Agenda") {
+                if(playerData[`game${gameNumber}`][objectiveName].count > 0) {
+                    playerData[`game${gameNumber}`][objectiveName].count--;
+                    playerData.totalKOs -= 1;
+                }
+            }
+            else {
+                playerData[`game${gameNumber}`][objectiveName].count = 0;
+            }
+
+            updateTotalKOsDisplay();
+            updateNoMoreMutantsPointsDisplay();
+            updatePoints(objectiveName, gameNumber);
+            updateButtonState(objectiveName, gameNumber);
+            updateGameTotal(gameNumber);
+            updateGrandTotalPointsDisplay();
+            savePlayerData();
+        }
+
+        function updatePoints(objectiveName, gameNumber) {
+            let objective = objectives.find(obj => obj.name === objectiveName);
+            let points = 0;
+
+            if (objectiveName === "Mutant Detected") {
+                // Sum of all threat values in the array
+                points = playerData[`game${gameNumber}`][objectiveName].threatValues.reduce((a, b) => a + b, 0);
+            }
+            else if (objective.type === "threat") {
+                points = playerData[`game${gameNumber}`][objectiveName].baseThreatValue * playerData[`game${gameNumber}`][objectiveName].count;
+            }
+            else {
+                points = objective.points * (playerData[`game${gameNumber}`][objectiveName].count > 0 ? 1 : 0);
+            }
+
+            document.getElementById(`${objectiveName}-points-${gameNumber}`).textContent = points;
+        }
+
+        function calculateGameTotal(gameNumber) {
+            let total = 0;
+            objectives.forEach(objective => {
+                let points = 0;
+                if (objective.name === "Mutant Detected") {
+                    points = playerData[`game${gameNumber}`][objective.name].threatValues.reduce((a, b) => a + b, 0);
+                }
+                else if (objective.type === "threat") {
+                    points = playerData[`game${gameNumber}`][objective.name].baseThreatValue * playerData[`game${gameNumber}`][objective.name].count;
+                }
+                else {
+                    points = objective.points * (playerData[`game${gameNumber}`][objective.name].count > 0 ? 1 : 0);
+                }
+
+                total += points;
+            });
+            return total;
+        }
+
+        function updateGameTotal(gameNumber) {
+            let total = calculateGameTotal(gameNumber);
+            document.getElementById(`game${gameNumber}-total`).textContent = total;
+        }
+
+        // Initialize
+        playerNameInput.addEventListener("change", savePlayerData);
+        loadPlayerData();
+        renderGameSections();
+    </script>
+</body>
+</html>
